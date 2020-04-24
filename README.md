@@ -17,7 +17,7 @@ d. Setiap pembuatan direktori terenkripsi baru (mkdir ataupun rename) akan terca
 e. Semua file yang berada dalam direktori ter enkripsi menggunakan caesar cipher dengan key.
 
 
-9(ku@AW1[Lmvgax6q`5Y2Ry?+sF!^HKQiBXCUSe&0M.b%rI'7d)o4~VfZ*{#:}ETt$3J-zpc]lnh8,GwP_ND|jO
+     9(ku@AW1[Lmvgax6q`5Y2Ry?+sF!^HKQiBXCUSe&0M.b%rI'7d)o4~VfZ*{#:}ETt$3J-zpc]lnh8,GwP_ND|jO
 
 f. Metode enkripsi pada suatu direktori juga berlaku kedalam direktori lainnya yang ada didalamnya.
 
@@ -64,7 +64,7 @@ d. Sisanya, akan dicatat dengan level INFO.
 
 e. Format untuk logging yaitu:
 
-[LEVEL]::[yy][mm][dd]-[HH]:[MM]:[SS]::[CMD]::[DESC ...]
+     [LEVEL]::[yy][mm][dd]-[HH]:[MM]:[SS]::[CMD]::[DESC ...]
 
 
 LEVEL    : Level logging
