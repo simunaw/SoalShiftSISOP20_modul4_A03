@@ -21,7 +21,7 @@ e. Semua file yang berada dalam direktori ter enkripsi menggunakan caesar cipher
 
 f. Metode enkripsi pada suatu direktori juga berlaku kedalam direktori lainnya yang ada didalamnya.
 
-jadi dari soal tersebut kita disuruh membuat program fuse yg mengarah ke direktori /home/user/Documents, jika di run pasti nanti mengarah ke suatu folder tujuan buat ngemount isi-isinya /home/user/Documents. intinya di /home/user/Documents itu bagaimana caranya jika kita membuat folder disitu dengan nama folder berawalan encv1_ maka folder tsb beserta isi-isinya akan di enkripsi namanya dengan metode enkripsi 1. Trus jika folder tersub di rename tanpa ada nama "encv1_" nanti isi-isi dari foldernya akan terdekrip namanya seperti awal.
+jadi dari soal tersebut kita disuruh membuat program fuse yg mengarah ke direktori /home/user/Documents, jika di run pasti nanti mengarah ke suatu folder tujuan buat ngemount isi-isinya /home/user/Documents. intinya di /home/user/Documents itu bagaimana caranya jika kita membuat folder disitu dengan nama folder berawalan encv1_ maka folder tsb beserta isi-isinya akan di enkripsi namanya dengan metode enkripsi 1. Trus jika folder tersebut di rename tanpa ada nama "encv1_" nanti isi-isi dari foldernya akan terdekrip namanya seperti awal.
 
 Terus setiap perubahan yg kita lakukan baik itu mkdir atau rename akan tercatat pada sebuah database log.
 
@@ -141,6 +141,7 @@ void dkrip (char * word)
 static int xmp_getattr(const char *path, struct stat *stbuf) //mengembalikan informasi penting tentang setiap file yang berada di 
 
 sistem file kita dengan mengisi struktur tipe stat.
+
 {
   int res;
   
@@ -158,6 +159,7 @@ sistem file kita dengan mengisi struktur tipe stat.
 }
 
 static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) // read directory 
+
 {
   char fpath[1000];
   
