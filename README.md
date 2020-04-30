@@ -3,162 +3,6 @@
 kelompok A03
 1. Abdullatif Fajar Sidiq (05111840007002)
 2. siti munawroh (05111840007004)
-
-
-#define FUSE_USE_VERSION 28
-
-#include <fuse.h>
-
-#include <stdio.h>
-
-#include <string.h>
-
-#include <unistd.h>
-
-#include <fcntl.h>
-
-#include <dirent.h>
-
-#include <errno.h>
-
-#include <sys/time.h>
-
-  
-
-static  int  xmp_getattr(const char *path, struct stat *stbuf)
-
-{
-
-int res;
-
-  
-
-res = lstat(path, stbuf);
-
-if (res == -1)
-
-return -errno;
-
-  
-
-return 0;
-
-}
-
-  
-
-static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-
-off_t offset, struct fuse_file_info *fi)
-
-{
-
-DIR *dp;
-
-struct dirent *de;
-
-  
-
-(void) offset;
-
-(void) fi;
-
-  
-
-dp = opendir(path);
-
-if (dp == NULL)
-
-return -errno;
-
-  
-
-while ((de = readdir(dp)) != NULL) {
-
-struct stat st;
-
-memset(&st, 0, sizeof(st));
-
-st.st_ino = de->d_ino;
-
-st.st_mode = de->d_type << 12;
-
-if (filler(buf, de->d_name, &st, 0))
-
-break;
-
-}
-
-  
-
-closedir(dp);
-
-return 0;
-
-}
-
-  
-
-static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
-
-struct fuse_file_info *fi)
-
-{
-
-int fd;
-
-int res;
-
-  
-
-(void) fi;
-
-fd = open(path, O_RDONLY);
-
-if (fd == -1)
-
-return -errno;
-
-  
-
-res = pread(fd, buf, size, offset);
-
-if (res == -1)
-
-res = -errno;
-
-  
-
-close(fd);
-
-return res;
-
-}
-
-  
-
-static struct fuse_operations xmp_oper = {
-
-.getattr = xmp_getattr,
-
-.readdir = xmp_readdir,
-
-.read = xmp_read,
-
-};
-
-  
-
-int  main(int  argc, char *argv[])
-
-{
-
-umask(0);
-
-return fuse_main(argc, argv, &xmp_oper, NULL);
-
-}
-
   
 
 1.)Enkripsi versi 1:
@@ -176,6 +20,180 @@ e. Semua file yang berada dalam direktori ter enkripsi menggunakan caesar cipher
      9(ku@AW1[Lmvgax6q`5Y2Ry?+sF!^HKQiBXCUSe&0M.b%rI'7d)o4~VfZ*{#:}ETt$3J-zpc]lnh8,GwP_ND|jO
 
 f. Metode enkripsi pada suatu direktori juga berlaku kedalam direktori lainnya yang ada didalamnya.
+
+jadi dari soal tersebut kita disuruh membuat program fuse yg mengarah ke direktori /home/user/Documents, jika di run pasti nanti mengarah ke suatu folder tujuan buat ngemount isi-isinya /home/user/Documents. intinya di /home/user/Documents itu bagaimana caranya jika kita membuat folder disitu dengan nama folder berawalan encv1_ maka folder tsb beserta isi-isinya akan di enkripsi namanya dengan metode enkripsi 1. Trus jika folder tersub di rename tanpa ada nama "encv1_" nanti isi-isi dari foldernya akan terdekrip namanya seperti awal.
+
+Terus setiap perubahan yg kita lakukan baik itu mkdir atau rename akan tercatat pada sebuah database log.
+#define FUSE_USE_VERSION 28
+#include <fuse.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <syslog.h>
+#include <sys/statfs.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+
+
+static const char *dirpath = "/home/fasijardiq/Documents";
+char chisper[100] = "9(ku@AW1[Lmvgax6q`5Y2Ry?+sF!^HKQiBXCUSe&0M.b%rI'7d)o4~VfZ*{#:}ETt$3J-zpc]lnh8,GwP_ND|jO";
+
+void ekrip (char * word)
+{
+  int a;
+  int b;
+  if(!strcmp(word,".") || !strcmp(word,"..")) return;
+  for(a=0;a<(strlen(word));a++)
+  {
+    printf("%c",word[a]);
+    if(word[a]!='/')
+    {
+      for(b=0;b<(strlen(chisper));b++)
+      {
+        if(chisper[b]==word[a])
+        {
+          int c = (b + 10) % 87;
+          word[a] = chisper[c];
+          break;
+	}
+      }
+    }	
+  }
+}
+
+void dkrip (char * word)
+{
+  int a;
+  int b;
+  if(!strcmp(word,".") || !strcmp(word,"..")) return;
+  for(a=0;a<(strlen(word));a++)
+  {
+    printf("%c",word[a]);
+    if(word[a]!='/')
+    {
+      for(b=0;b<(strlen(chisper));b++)
+      {
+	if(chisper[b]==word[a])
+	{
+	  int c = (b + 87-10) % 87;
+	  word[a] = chisper[c];
+	  break;
+	}
+      }
+    }	
+  }
+}
+
+static int xmp_getattr(const char *path, struct stat *stbuf) //mengembalikan informasi penting tentang setiap file yang berada di sistem file kita dengan mengisi struktur tipe stat.
+{
+  int res;
+  char fpath[1000];
+  sprintf(fpath, "%s%s", dirpath, path);
+  res = lstat(fpath, stbuf);
+  if (res == -1)
+    return -errno;
+  return 0;
+}
+
+static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) // read directory 
+{
+  char fpath[1000];
+  if (!strcmp(fpath, "/"))
+  {
+    path = dirpath;
+    strcpy(fpath, path);
+  }
+  else sprintf(fpath, "%s%s", dirpath, path);
+  DIR *dp;
+  struct dirent *de;
+  (void)offset;
+  (void)fi;
+  dp = opendir(fpath);
+  if (dp == NULL)
+    return -errno;
+  while ((de = readdir(dp)) != NULL)
+  {
+    struct stat st;
+    memset(&st, 0, sizeof(st));
+    st.st_ino = de->d_ino;
+    st.st_mode = de->d_type << 12;
+    if (filler(buf, de->d_name, &st, 0)) 
+      break;
+  }
+  closedir(dp);
+  return 0;
+}
+
+static int xmp_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) //Read data from an open file
+{
+  char fpath[1000];
+  if (!strcmp(fpath, "/"))
+  {
+    path = dirpath;
+    strcpy(fpath, path);
+  }
+  else sprintf(fpath, "%s%s", dirpath, path);
+  int res = 0;
+  int fd = 0;
+  (void)fi;
+  fd = open(fpath, O_RDONLY);
+  if (fd == -1)
+    return -errno;
+  res = pread(fd, buf, size, offset);
+  if (res == -1)
+    res = -errno;
+  close(fd);
+  return res;
+}
+
+static int xmp_rename(const char *from, const char *to) //Rename a file
+{
+    int res;
+    char ffrom[1000];
+    char fto[1000];
+    system("mkdir /home/fasijardiq/Dokumen");
+    char direktori[] = "/home/fasijardiq/Dokumen";
+    system("zenity --info --text=\"INI ADALAH INFO: file telah direname dan dipindahkan ke Home\" --title=\"INFO\"");
+    sprintf(ffrom,"%s%s",dirpath,from);
+    sprintf(fto,"%s%s",direktori,to);
+      res = rename(ffrom, fto);
+    if(res == -1)
+      return -errno;
+    return 0;
+}
+
+static int xmp_truncate(const char *path, off_t size)
+{
+  int res = truncate(path, size);
+  if (res == -1)
+    return -errno;
+  return 0;
+}
+
+static struct fuse_operations xmp_oper = // pointer yang menuju ke fungsi
+{
+  .getattr = xmp_getattr,
+  .readdir = xmp_readdir,
+  .read = xmp_read,
+  .rename = xmp_rename,
+  .truncate = xmp_truncate,
+};
+
+int main(int argc, char *argv[]) //fungsi main (userspace), program user memanggil fungsi fuse_main() kemudian fungsi fuse_mount() dipanggil.
+{
+  umask(0);
+  return fuse_main(argc, argv, &xmp_oper, NULL);
+}
+
+
+
 
 2.)Enkripsi versi 2:
 
